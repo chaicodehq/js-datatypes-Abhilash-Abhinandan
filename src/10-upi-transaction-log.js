@@ -47,5 +47,64 @@
  *   //      frequentContact: "Swiggy", allAbove100: false, hasLargeTransaction: true }
  */
 export function analyzeUPITransactions(transactions) {
-  // Your code here
+  if(!Array.isArray(transactions) 
+    || transactions.length === 0
+  )
+    return null;
+
+ const {credit, debit, totalCredit, totalDebit, transactionCount, highestTransaction, categoryBreakdown, contactFrequency, maxContactCount, frequentContact, allAbove100} = transactions.reduce((acc, t) => {
+     if(!t 
+        || !Number.isFinite(t.amount)
+        || t.amount < 0
+        || (t.type !== "credit" && t.type !== "debit")
+        )
+        return acc;
+        
+    if(!acc.highestTransaction || t.amount > acc.highestTransaction.amount)
+        acc.highestTransaction = t;
+    
+    acc.categoryBreakdown[t.category] = (acc.categoryBreakdown[t.category] || 0) + t.amount;
+    
+    acc.contactFrequency[t.to] = (acc.contactFrequency[t.to] || 0) + 1;
+    if(acc.contactFrequency[t.to] > acc.maxContactCount){
+        acc.maxContactCount = acc.contactFrequency[t.to];
+        acc.frequentContact = t.to;
+    };
+    
+    if(t.amount <= 100) acc.allAbove100 = false;
+        
+      if(t.type === "credit") {
+          acc.credit.push(t);
+          acc.totalCredit += t.amount;
+          acc.transactionCount += 1;
+      }
+      else if(t.type === "debit") {
+          acc.debit.push(t);
+          acc.totalDebit += t.amount;
+          acc.transactionCount += 1;
+      }
+      
+      return acc;
+  }, {credit: [], debit: [], totalCredit: 0, totalDebit: 0, transactionCount: 0, highestTransaction: null, categoryBreakdown: {}, contactFrequency: {}, maxContactCount: 0, frequentContact: null, allAbove100: true});
+  
+  if(transactionCount === 0) return null;
+  
+  const netBalance = totalCredit - totalDebit;
+  const avgTransaction = Math.round((totalCredit + totalDebit) / transactionCount);
+  const hasLargeTransaction = highestTransaction.amount >= 5000;
+  
+
+  return {
+    totalCredit,
+    totalDebit,
+    netBalance,
+    transactionCount,
+    avgTransaction,
+    highestTransaction,
+    categoryBreakdown,
+    frequentContact,
+    allAbove100,
+    hasLargeTransaction
+  }
 }
+
